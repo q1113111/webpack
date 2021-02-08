@@ -26,18 +26,97 @@ npm install core-js@3 --save
 1. 入口 (entry)
 2. 出口 (output)
 3. loader
-
-```javascript=
-
-```
-
 4. 插件 (plugin)
-
-```javascript
-
-```
-
 5. 模式 (mode)
    - development 開發模式
    - production 輸出產品
    - none
+
+---
+
+## build
+
+在 buid 資料夾下建立四種 webpack.config
+
+1. webpack.base.config.js
+
+```javascript=
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyPlugin = require("copy-webpack-plugin");
+
+module.exports = {
+  entry: "./src/index.js",
+  output: {
+    filename: "index.js",
+  },
+
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: './src/index.html',
+      inject:'body',
+    }),
+    new CopyPlugin({
+      patterns: [
+        { from: "static", to: "static" },
+      ],
+    }),
+  ],
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: [
+              ['@babel/preset-env', {
+                targets: "defaults",
+                "corejs": "3",
+                "useBuiltIns": "entry",
+              }]
+            ]
+          }
+        }
+      }
+    ]
+  }
+};
+
+```
+
+2. webpack.dev.config.js
+
+```javascript=
+module.exports={
+    devtool: 'eval-cheap-module-source-map'
+}
+```
+
+3. webpack.pro.config.js
+
+```javascript=
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+
+module.exports ={
+    plugins: [
+        new CleanWebpackPlugin(),
+    ],
+}
+```
+
+4. webpack.config.js
+
+```javascript=
+const { merge } = require('webpack-merge')
+const baseConfig = require("./webpack.base.config");
+const devConfig = require("./webpack.dev.config");
+const proConfig = require("./webpack.pro.config");
+
+
+module.exports = (env, argv) => {
+  const config = argv.mode === "development" ? devConfig : proConfig;
+  return merge(baseConfig, config);
+};
+
+```
